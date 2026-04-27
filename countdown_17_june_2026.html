@@ -1,0 +1,223 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; }
+  #root {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+  h1 {
+    font-family: var(--font-sans);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    text-align: center;
+    margin-bottom: 2rem;
+    direction: rtl;
+    line-height: 1.5;
+  }
+  .units {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .unit {
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 1rem 1.25rem;
+    min-width: 110px;
+    text-align: center;
+  }
+  .unit .val {
+    font-family: var(--font-mono);
+    font-size: 38px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    line-height: 1.1;
+    display: block;
+    letter-spacing: 2px;
+  }
+  .unit .lbl {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin-top: 6px;
+    display: block;
+    direction: rtl;
+  }
+  canvas#sparks {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+</style>
+
+<div id="root">
+  <canvas id="sparks"></canvas>
+  <h1>فاضل قد ايه علي 17 يونيو الساعة 4؟</h1>
+  <div class="units">
+    <div class="unit"><span class="val" id="d">00</span><span class="lbl">يوم</span></div>
+    <div class="unit"><span class="val" id="h">00</span><span class="lbl">ساعة</span></div>
+    <div class="unit"><span class="val" id="m">00</span><span class="lbl">دقيقة</span></div>
+    <div class="unit"><span class="val" id="s">00</span><span class="lbl">ثانية</span></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const TARGET = new Date('2026-06-17T16:00:00+03:00').getTime();
+
+  function getRemainder() {
+    const diff = TARGET - Date.now();
+    if (diff <= 0) return { d:0, h:0, m:0, s:0 };
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    return { d, h, m, s };
+  }
+
+  const real = getRemainder();
+  const startVals = { d: 0, h: 0, m: 0, s: 0 };
+  const endVals   = { ...real };
+  const ANIM_DURATION = 2200;
+  let animStart = null;
+  let animDone = false;
+
+  function ease(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function setDisplay(vals) {
+    document.getElementById('d').textContent = pad(Math.round(vals.d));
+    document.getElementById('h').textContent = pad(Math.round(vals.h));
+    document.getElementById('m').textContent = pad(Math.round(vals.m));
+    document.getElementById('s').textContent = pad(Math.round(vals.s));
+  }
+
+  function animateIn(ts) {
+    if (!animStart) animStart = ts;
+    const t = Math.min((ts - animStart) / ANIM_DURATION, 1);
+    const e = ease(t);
+    setDisplay({
+      d: endVals.d * e,
+      h: endVals.h * e,
+      m: endVals.m * e,
+      s: endVals.s * e,
+    });
+    if (t < 1) {
+      requestAnimationFrame(animateIn);
+    } else {
+      animDone = true;
+      setDisplay(endVals);
+      launchFireworks();
+    }
+  }
+
+  requestAnimationFrame(animateIn);
+
+  setInterval(() => {
+    if (!animDone) return;
+    setDisplay(getRemainder());
+  }, 1000);
+
+  const canvas = document.getElementById('sparks');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+
+  function resize() {
+    const r = canvas.parentElement.getBoundingClientRect();
+    canvas.width = r.width;
+    canvas.height = r.height;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function burst(cx, cy, count, hue) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1.5 + Math.random() * 4;
+      particles.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1,
+        life: 1,
+        decay: 0.012 + Math.random() * 0.018,
+        size: 2 + Math.random() * 4,
+        hue: hue + (Math.random() - 0.5) * 40,
+        shape: Math.random() > 0.5 ? 'star' : 'circle'
+      });
+    }
+  }
+
+  function drawStar(x, y, r, ctx) {
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const outerX = x + r * Math.cos((i * 4 * Math.PI) / 5 - Math.PI / 2);
+      const outerY = y + r * Math.sin((i * 4 * Math.PI) / 5 - Math.PI / 2);
+      const innerX = x + (r * 0.4) * Math.cos(((i * 4 + 2) * Math.PI) / 5 - Math.PI / 2);
+      const innerY = y + (r * 0.4) * Math.sin(((i * 4 + 2) * Math.PI) / 5 - Math.PI / 2);
+      if (i === 0) ctx.moveTo(outerX, outerY);
+      else ctx.lineTo(outerX, outerY);
+      ctx.lineTo(innerX, innerY);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles = particles.filter(p => p.life > 0);
+    for (const p of particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.07;
+      p.vx *= 0.98;
+      p.life -= p.decay;
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = `hsl(${p.hue}, 95%, 60%)`;
+      if (p.shape === 'star') {
+        drawStar(p.x, p.y, p.size, ctx);
+      } else {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  function launchFireworks() {
+    const w = canvas.width;
+    const h = canvas.height;
+    const hues = [40, 55, 280, 200, 340, 120];
+    const spots = [
+      [w * 0.15, h * 0.3],
+      [w * 0.85, h * 0.25],
+      [w * 0.5,  h * 0.15],
+      [w * 0.3,  h * 0.6],
+      [w * 0.7,  h * 0.55],
+    ];
+    let i = 0;
+    function fire() {
+      if (i >= spots.length * 2) return;
+      const [cx, cy] = spots[i % spots.length];
+      burst(cx, cy, 45, hues[i % hues.length]);
+      i++;
+      setTimeout(fire, 160);
+    }
+    fire();
+    setTimeout(fire, 800);
+  }
+})();
+</script>
