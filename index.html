@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>فاضل قد ايه علي 17 يونيو؟</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0d0d1a;
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+
+    canvas#sparks {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 2.5rem 2rem;
+    }
+
+    h1 {
+      font-size: clamp(20px, 4vw, 32px);
+      font-weight: 600;
+      color: #f0e6ff;
+      margin-bottom: 2.5rem;
+      line-height: 1.6;
+      text-shadow: 0 0 30px rgba(160, 100, 255, 0.4);
+    }
+
+    .units {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      flex-direction: row-reverse;
+    }
+
+    .unit {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 1.2rem 1.5rem;
+      min-width: 120px;
+      backdrop-filter: blur(10px);
+    }
+
+    .unit .val {
+      font-family: 'Courier New', monospace;
+      font-size: clamp(36px, 6vw, 56px);
+      font-weight: 700;
+      color: #e8d5ff;
+      display: block;
+      letter-spacing: 4px;
+      line-height: 1.1;
+      text-shadow: 0 0 20px rgba(180, 120, 255, 0.6);
+    }
+
+    .unit .lbl {
+      font-size: 14px;
+      color: rgba(220, 200, 255, 0.6);
+      margin-top: 8px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="sparks"></canvas>
+
+<div class="container">
+  <h1>فاضل قد ايه علي 17 يونيو الساعة 4؟</h1>
+  <div class="units">
+    <div class="unit"><span class="val" id="d">00</span><span class="lbl">يوم</span></div>
+    <div class="unit"><span class="val" id="h">00</span><span class="lbl">ساعة</span></div>
+    <div class="unit"><span class="val" id="m">00</span><span class="lbl">دقيقة</span></div>
+    <div class="unit"><span class="val" id="s">00</span><span class="lbl">ثانية</span></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // Target: June 17, 2026 at 4:00 PM Cairo time (UTC+3)
+  const TARGET = new Date('2026-06-17T16:00:00+03:00').getTime();
+
+  function getRemainder() {
+    const diff = TARGET - Date.now();
+    if (diff <= 0) return { d: 0, h: 0, m: 0, s: 0 };
+    return {
+      d: Math.floor(diff / 86400000),
+      h: Math.floor((diff % 86400000) / 3600000),
+      m: Math.floor((diff % 3600000) / 60000),
+      s: Math.floor((diff % 60000) / 1000)
+    };
+  }
+
+  const real = getRemainder();
+  const ANIM_DURATION = 2400;
+  let animStart = null;
+  let animDone = false;
+
+  function ease(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+  function pad(n) { return String(Math.round(n)).padStart(2, '0'); }
+
+  function setDisplay(vals) {
+    document.getElementById('d').textContent = pad(vals.d);
+    document.getElementById('h').textContent = pad(vals.h);
+    document.getElementById('m').textContent = pad(vals.m);
+    document.getElementById('s').textContent = pad(vals.s);
+  }
+
+  function animateIn(ts) {
+    if (!animStart) animStart = ts;
+    const t = Math.min((ts - animStart) / ANIM_DURATION, 1);
+    const e = ease(t);
+    setDisplay({
+      d: real.d * e,
+      h: real.h * e,
+      m: real.m * e,
+      s: real.s * e
+    });
+    if (t < 1) {
+      requestAnimationFrame(animateIn);
+    } else {
+      animDone = true;
+      setDisplay(real);
+      launchFireworks();
+    }
+  }
+
+  requestAnimationFrame(animateIn);
+
+  setInterval(() => {
+    if (animDone) setDisplay(getRemainder());
+  }, 1000);
+
+  // ── Fireworks / sparkles ──────────────────────────────────────────
+  const canvas = document.getElementById('sparks');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function burst(cx, cy, count, hue) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1.8 + Math.random() * 5;
+      particles.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1.5,
+        life: 1,
+        decay: 0.010 + Math.random() * 0.016,
+        size: 2.5 + Math.random() * 5,
+        hue: hue + (Math.random() - 0.5) * 45,
+        shape: Math.random() > 0.45 ? 'star' : 'circle'
+      });
+    }
+  }
+
+  function drawStar(x, y, r) {
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const ox = x + r * Math.cos((i * 4 * Math.PI) / 5 - Math.PI / 2);
+      const oy = y + r * Math.sin((i * 4 * Math.PI) / 5 - Math.PI / 2);
+      const ix = x + r * 0.4 * Math.cos(((i * 4 + 2) * Math.PI) / 5 - Math.PI / 2);
+      const iy = y + r * 0.4 * Math.sin(((i * 4 + 2) * Math.PI) / 5 - Math.PI / 2);
+      i === 0 ? ctx.moveTo(ox, oy) : ctx.lineTo(ox, oy);
+      ctx.lineTo(ix, iy);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles = particles.filter(p => p.life > 0);
+    for (const p of particles) {
+      p.x  += p.vx;
+      p.y  += p.vy;
+      p.vy += 0.08;
+      p.vx *= 0.98;
+      p.life -= p.decay;
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = `hsl(${p.hue}, 95%, 62%)`;
+      if (p.shape === 'star') drawStar(p.x, p.y, p.size);
+      else {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  function launchFireworks() {
+    const w = canvas.width;
+    const h = canvas.height;
+    const hues  = [45, 55, 280, 200, 340, 120, 30];
+    const spots = [
+      [w * 0.15, h * 0.3],
+      [w * 0.85, h * 0.25],
+      [w * 0.5,  h * 0.12],
+      [w * 0.25, h * 0.65],
+      [w * 0.75, h * 0.6],
+      [w * 0.5,  h * 0.5],
+    ];
+    let i = 0;
+    function fire() {
+      if (i >= spots.length + 4) return;
+      const [cx, cy] = spots[i % spots.length];
+      burst(cx, cy, 55, hues[i % hues.length]);
+      i++;
+      setTimeout(fire, 150);
+    }
+    fire();
+    // second wave
+    setTimeout(fire, 1000);
+  }
+})();
+</script>
+</body>
+</html>
